@@ -44,7 +44,7 @@ graphql() {
   local auth=()
   if [ -n "${KAI_TOKEN:-}" ]; then auth=(-H "Authorization: Bearer ${KAI_TOKEN}"); fi
   out=$(curl -s -w $'\n%{http_code}' -X POST "$SERVER/graphql" \
-    -H 'Content-Type: application/json' "${auth[@]}" -d "$body")
+    -H 'Content-Type: application/json' ${auth[@]+"${auth[@]}"} -d "$body")
   status="${out##*$'\n'}"
   echo "$out" | sed '$d' | pretty
   echo "HTTP $status"
