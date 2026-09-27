@@ -1,0 +1,29 @@
+rules_version = '2';
+
+// COMPSCI 734 - the whole architecture, in five lines.
+//
+// Anyone may READ events and users: that is what lets a phone open a snapshot
+// listener straight to Firestore and get live updates without asking our
+// server for anything.
+//
+// Nobody may WRITE. Not "no unauthenticated user"; nobody. Every write in this
+// system goes through the GraphQL server, which holds a service account and
+// bypasses these rules entirely. The server owns the truth, so the rules say
+// so out loud.
+//
+// Rules are not a filter and they are not a firewall you can forget about:
+// they run on Google's side, on every single request, and they are the only
+// thing standing between a public database and the internet. Production mode
+// starts with everything denied, which is the right default.
+//
+// Real per-user authorisation ("you may edit the events you posted") needs
+// signed-in users to hang the rules on.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
