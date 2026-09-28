@@ -20,6 +20,8 @@ import { useRepository } from "../state/RepositoryContext";
 export type Removal = {
   removed: Set<string>;
   failed: string[];
+  /** The server's reason for the first refusal, e.g. "Only the organiser who posted this event can remove it." */
+  failureReason: string | null;
   /** True while a batch is in flight, so the button can say so. */
   removing: boolean;
   remove: (id: string, name: string) => void;
@@ -45,6 +47,7 @@ export function useRemoveEvent({
   const repository = useRepository();
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [failed, setFailed] = useState<string[]>([]);
+  const [failureReason, setFailureReason] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
 
   const hide = useCallback(
@@ -71,6 +74,7 @@ export function useRemoveEvent({
     (events: { id: string; name: string }[]) => {
       if (events.length === 0) return;
       setFailed([]);
+      setFailureReason(null);
       setRemoving(true);
       // Gone from the screen before the requests have left the building.
       hide(events.map((e) => e.id));
@@ -88,6 +92,12 @@ export function useRemoveEvent({
           // be a surprising place to land.
           unhide(refused.map((e) => e.id));
           setFailed(refused.map((e) => e.name));
+          // Show the server's reason for a refusal, not just "it failed".
+          const firstRejection = results.find((r) => r.status === "rejected") as
+            | PromiseRejectedResult
+            | undefined;
+          const reason = firstRejection?.reason;
+          setFailureReason(reason instanceof Error ? reason.message : null);
         }
         if (refused.length < events.length) onRemoved?.();
         setRemoving(false);
@@ -109,7 +119,10 @@ export function useRemoveEvent({
     [removeMany],
   );
 
-  const dismissFailure = useCallback(() => setFailed([]), []);
+  const dismissFailure = useCallback(() => {
+    setFailed([]);
+    setFailureReason(null);
+  }, []);
 
-  return { removed, failed, removing, remove, removeMany, dismissFailure };
+  return { removed, failed, failureReason, removing, remove, removeMany, dismissFailure };
 }

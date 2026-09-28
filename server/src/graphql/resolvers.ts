@@ -5,7 +5,7 @@
 
 import { announce } from '../notify';
 import { store } from '../store';
-import { requireOrganiser, type Context } from '../auth';
+import { forbidden, requireOrganiser, type Context } from '../auth';
 import type { KaiEvent, NewEvent, User } from '../data';
 
 // What the client may send: everything except who it is.
@@ -64,8 +64,15 @@ export const resolvers: Resolvers = {
       return event;
     },
 
+    // Being an organiser is not enough: the event must be the caller's own.
     deleteEvent: async (_, { id }, context) => {
-      await requireOrganiser(context);
+      const { caller, organiser } = await requireOrganiser(context);
+      const event = await store.event(id);
+      if (!event) return undefined; // already gone: late, not wrong
+      if (event.postedById !== caller.uid) {
+        console.log(`delete: REFUSED ${organiser.name} removing "${event.name}" (not theirs)`);
+        throw forbidden('Only the organiser who posted this event can remove it.');
+      }
       return store.deleteEvent(id);
     },
   },

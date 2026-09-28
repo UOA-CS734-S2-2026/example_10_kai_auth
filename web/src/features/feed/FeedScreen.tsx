@@ -39,7 +39,7 @@ export function FeedScreen() {
   const [sort, setSort] = useState<SortKey>("portions");
 
   const { deselect, retainOnly } = useSelection();
-  const { removed, failed, removing, remove, removeMany, dismissFailure } =
+  const { removed, failed, failureReason, removing, remove, removeMany, dismissFailure } =
     useRemoveEvent({
       onRemoved: reload,
       onRemoving: deselect,
@@ -143,6 +143,7 @@ export function FeedScreen() {
               ? `Couldn\u2019t remove \u201C${failed[0]}\u201D. It is still listed.`
               : `Couldn\u2019t remove ${failed.length} events. They are still listed.`}
           </p>
+          {failureReason && <p className="state__reason">{failureReason}</p>}
           <button type="button" onClick={dismissFailure}>
             Dismiss
           </button>

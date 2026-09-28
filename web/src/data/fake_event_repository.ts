@@ -63,8 +63,14 @@ export class FakeEventRepository implements EventRepository {
     // shouldThrow is checked BEFORE the array is touched. Otherwise a "failed"
     // delete still removes the event, and the rollback test passes for the
     // wrong reason.
-    if (this.shouldThrow || this.refuseToDelete.has(id)) {
+    if (this.shouldThrow) {
       return Promise.reject(new Error("Could not reach the Kai server"));
+    }
+    if (this.refuseToDelete.has(id)) {
+      // What the real server says when the event is not yours.
+      return Promise.reject(
+        new Error("Only the organiser who posted this event can remove it."),
+      );
     }
     this.deleted.push(id);
     const existed = this.events.some((e) => e.id === id);
