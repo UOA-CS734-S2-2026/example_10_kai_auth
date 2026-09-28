@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "../../App";
+import { FakeAuthService } from "../../auth/fake_auth_service";
+import type { SignedInUser } from "../../auth/auth_service";
 import { FakeEventRepository, sampleEvents } from "../../data/fake_event_repository";
 import { ORGANISERS } from "../../data/kai_user";
 
@@ -13,8 +15,9 @@ import { ORGANISERS } from "../../data/kai_user";
  * keeps the tests working through refactors and checks the accessible names
  * exist at the same time.
  */
-function renderApp(repository: FakeEventRepository) {
-  return render(<App repository={repository} />);
+/** Signed in as Priya (u1) unless told otherwise. */
+function renderApp(repository: FakeEventRepository, signedInAs?: SignedInUser) {
+  return render(<App repository={repository} auth={new FakeAuthService(signedInAs)} />);
 }
 
 describe("FeedScreen", () => {
@@ -188,13 +191,13 @@ describe("organisers", () => {
     expect(screen.queryByText("Sausage sizzle")).not.toBeInTheDocument();
   });
 
-  it("follows the acting-as selector", async () => {
+  it("means whoever is signed in, not whoever is picked", async () => {
     const user = userEvent.setup();
-    renderApp(new FakeEventRepository());
-    await screen.findByText("Free samosas");
+    const tama = ORGANISERS[1];
+    renderApp(new FakeEventRepository(), { uid: tama.id, name: tama.name, email: null });
+    await screen.findByText("Sausage sizzle");
 
     await user.click(screen.getByRole("button", { name: "My events" }));
-    await user.selectOptions(screen.getByLabelText("Acting as"), "u2");
 
     expect(await screen.findByText("Sausage sizzle")).toBeInTheDocument();
     expect(screen.queryByText("Free samosas")).not.toBeInTheDocument();
@@ -207,11 +210,11 @@ describe("organisers", () => {
       new FakeEventRepository(
         sampleEvents.filter((e) => e.postedById !== organiser.id),
       ),
+      { uid: organiser.id, name: organiser.name, email: null },
     );
     await screen.findByText("Free samosas");
 
     await user.click(screen.getByRole("button", { name: "My events" }));
-    await user.selectOptions(screen.getByLabelText("Acting as"), organiser.id);
     expect(
       await screen.findByText(new RegExp(`${organiser.name} hasn.t posted`, "i")),
     ).toBeInTheDocument();

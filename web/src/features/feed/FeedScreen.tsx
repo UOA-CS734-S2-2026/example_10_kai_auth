@@ -4,7 +4,7 @@ import { useRemoveEvent } from "../../hooks/useRemoveEvent";
 import { useSelection } from "../../state/SelectionContext";
 import type { KaiEvent } from "../../data/kai_event";
 import { SelectionBar } from "./SelectionBar";
-import { useOrganiser } from "../../state/OrganiserContext";
+import { useSignedInUser } from "../../state/AuthContext";
 import { KaiEventList } from "./KaiEventList";
 import { KaiEventTable } from "./KaiEventTable";
 
@@ -30,7 +30,7 @@ const comparators: Record<SortKey, (a: KaiEvent, b: KaiEvent) => number> = {
  */
 export function FeedScreen() {
   const { events, error, loading, reload } = useEvents();
-  const { organiser } = useOrganiser();
+  const user = useSignedInUser();
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState<"mine" | "all">("all");
   // Which way the same events are drawn. Nothing else depends on it, which is
@@ -57,7 +57,7 @@ export function FeedScreen() {
     // Optimistically removed rows drop out here, alongside every other filter,
     // so there is still only one source of truth for what is on screen.
     .filter((event) => !removed.has(event.id))
-    .filter((event) => scope === "all" || event.postedById === organiser.id)
+    .filter((event) => scope === "all" || event.postedById === user.uid)
     .filter((event) =>
       `${event.name} ${event.location}`
         .toLowerCase()
@@ -168,7 +168,7 @@ export function FeedScreen() {
             <p>{`No events match \u201C${query}\u201D.`}</p>
           ) : scope === "mine" ? (
             <>
-              <p>{`${organiser.name} hasn\u2019t posted anything yet.`}</p>
+              <p>{`${user.name} hasn\u2019t posted anything yet.`}</p>
               <p className="state__hint">
                 Post an event, or switch to All events to see the rest of campus.
               </p>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRepository } from "../../state/RepositoryContext";
-import { useOrganiser } from "../../state/OrganiserContext";
+import { useSignedInUser } from "../../state/AuthContext";
 import type { NewKaiEvent } from "../../data/kai_event";
 
 /** Defaults roughly to the middle of the City Campus. */
@@ -20,7 +20,7 @@ const EMPTY: Omit<NewKaiEvent, "postedById"> = {
  */
 export function PostEventScreen() {
   const repository = useRepository();
-  const { organiser } = useOrganiser();
+  const user = useSignedInUser();
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +44,8 @@ export function PostEventScreen() {
         ...form,
         name: form.name.trim(),
         location: form.location.trim(),
-        postedById: organiser.id,
+        // Sent as an argument; the server does not check it.
+        postedById: user.uid,
       });
       setPosted(created.name);
       setForm(EMPTY);
@@ -66,8 +67,7 @@ export function PostEventScreen() {
       </header>
 
       <p className="posting-as">
-        Posting as <strong>{organiser.name}</strong>, {organiser.dept}. Change it
-        in the app bar.
+        Posting as <strong>{user.name}</strong>.
       </p>
 
       <div className="field">
@@ -126,7 +126,7 @@ export function PostEventScreen() {
       )}
       {posted && (
         <p className="state state--success" role="status">
-          Posted {posted} as {organiser.name}. Every phone subscribed to the
+          Posted {posted} as {user.name}. Every phone subscribed to the
           kai-events topic just got a notification.
         </p>
       )}

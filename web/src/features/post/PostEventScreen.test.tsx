@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "../../App";
+import { FakeAuthService } from "../../auth/fake_auth_service";
+import type { SignedInUser } from "../../auth/auth_service";
 import { FakeEventRepository } from "../../data/fake_event_repository";
 import { ORGANISERS } from "../../data/kai_user";
 
-async function openPostScreen(repository: FakeEventRepository) {
+async function openPostScreen(repository: FakeEventRepository, signedInAs?: SignedInUser) {
   const user = userEvent.setup();
-  render(<App repository={repository} />);
+  render(<App repository={repository} auth={new FakeAuthService(signedInAs)} />);
   await user.click(screen.getByRole("button", { name: "Post" }));
   return user;
 }
@@ -63,11 +65,10 @@ describe("PostEventScreen", () => {
 });
 
 describe("who posted it", () => {
-  it("attributes the event to the acting organiser", async () => {
+  it("attributes the event to whoever is signed in", async () => {
     const repository = new FakeEventRepository();
-    const user = await openPostScreen(repository);
+    const user = await openPostScreen(repository, { uid: "u3", name: "Mei", email: null });
 
-    await user.selectOptions(screen.getByLabelText("Acting as"), "u3");
     await user.type(screen.getByLabelText("Event name"), "Business mixer leftovers");
     await user.click(screen.getByRole("button", { name: /post event/i }));
 
@@ -76,9 +77,12 @@ describe("who posted it", () => {
   });
 
   it("says out loud who it is about to post as", async () => {
-    const user = await openPostScreen(new FakeEventRepository());
     const organiser = ORGANISERS[3];
-    await user.selectOptions(screen.getByLabelText("Acting as"), organiser.id);
+    await openPostScreen(new FakeEventRepository(), {
+      uid: organiser.id,
+      name: organiser.name,
+      email: null,
+    });
     expect(screen.getByText(/posting as/i)).toHaveTextContent(organiser.name);
   });
 });

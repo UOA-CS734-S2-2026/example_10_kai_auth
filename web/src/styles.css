@@ -39,17 +39,42 @@ body {
 }
 .app__bar h1 { font-size: 1.25rem; color: var(--green); }
 
-/* The "acting as" selector. */
-.organiser-picker { display: flex; align-items: center; gap: .5rem; font-size: .875rem; }
-.organiser-picker label { color: var(--muted); }
-.organiser-picker select {
-  min-height: 44px; padding: 0 .5rem; font-size: .9375rem;
+/* Who is signed in, replacing Week 07's "acting as" selector. */
+.account-bar { display: flex; align-items: center; gap: .75rem; font-size: .875rem; }
+.account-bar button, .sign-in button:not(.primary) {
+  min-height: 44px; padding: 0 1rem; font-size: .9375rem; cursor: pointer;
   border: 1px solid var(--muted); border-radius: .5rem;
   background: transparent; color: inherit;
 }
-.organiser-picker__warning {
-  border: 1px dashed var(--error); color: var(--error);
-  border-radius: 999px; padding: .125rem .5rem; font-size: .75rem;
+
+.sign-in { max-width: 32rem; margin: 3rem auto; text-align: left; }
+.sign-in h2 { color: var(--green); }
+.sign-in code, .not-organiser code { font-size: .8125rem; word-break: break-all; }
+
+button.link {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  color: var(--green-bright); text-decoration: underline; font-size: .875rem;
+}
+
+/* Teaching aid: the three parts of the ID token, colour-coded. */
+.token-strip { margin: .25rem 0 .75rem; }
+.token-peek { border: 1px solid var(--muted); border-radius: .5rem; padding: .75rem; }
+.token-peek__raw {
+  font-family: ui-monospace, Menlo, monospace; font-size: .6875rem;
+  word-break: break-all; margin-top: 0;
+}
+.token-peek__decoded { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: .75rem; }
+.token-peek__decoded h4 { margin: 0 0 .25rem; font-size: .8125rem; }
+.token-peek__decoded pre {
+  margin: 0; font-size: .6875rem; white-space: pre-wrap; word-break: break-all;
+}
+.jwt-header { color: #c2185b; }
+.jwt-payload { color: #6a1b9a; }
+.jwt-signature { color: #00838f; }
+@media (prefers-color-scheme: dark) {
+  .jwt-header { color: #f48fb1; }
+  .jwt-payload { color: #ce93d8; }
+  .jwt-signature { color: #80deea; }
 }
 
 .scope { display: flex; gap: .5rem; margin: 1rem 0; }

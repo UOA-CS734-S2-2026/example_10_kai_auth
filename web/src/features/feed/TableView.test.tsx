@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "../../App";
+import { FakeAuthService } from "../../auth/fake_auth_service";
 import { FakeEventRepository } from "../../data/fake_event_repository";
 
 function renderApp(repository = new FakeEventRepository()) {
-  return render(<App repository={repository} />);
+  return render(<App repository={repository} auth={new FakeAuthService()} />);
 }
 
 describe("the table view", () => {
