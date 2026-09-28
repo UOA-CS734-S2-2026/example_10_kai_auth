@@ -51,7 +51,7 @@ rest.post('/reset', async (req, res) => {
 // People are resources too, and that one addition is what turns rendering a
 // feed card into 1 + N requests.
 rest.get('/users/:id', async (req, res) => {
-  const user = await store.user(req.params.id);
+  const user = await store.organiser(req.params.id);
   if (!user) {
     res.status(404).json({ error: 'not found' });
     return;
@@ -68,7 +68,7 @@ rest.get('/events-with-users', async (req, res) => {
     await Promise.all(
       events.map(async (event) => ({
         ...event,
-        postedBy: await store.user(event.postedById),
+        postedBy: await store.organiser(event.postedById),
       })),
     ),
   );

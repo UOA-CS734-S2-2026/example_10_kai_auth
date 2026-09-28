@@ -10,7 +10,8 @@ import { ORGANISERS } from "../../data/kai_user";
 async function openPostScreen(repository: FakeEventRepository, signedInAs?: SignedInUser) {
   const user = userEvent.setup();
   render(<App repository={repository} auth={new FakeAuthService(signedInAs)} />);
-  await user.click(screen.getByRole("button", { name: "Post" }));
+  // The Post tab appears once the server has confirmed an organiser.
+  await user.click(await screen.findByRole("button", { name: "Post" }));
   return user;
 }
 
@@ -78,7 +79,10 @@ describe("who posted it", () => {
 
   it("says out loud who it is about to post as", async () => {
     const organiser = ORGANISERS[3];
-    await openPostScreen(new FakeEventRepository(), {
+    const repository = new FakeEventRepository();
+    // The name on screen is the server's answer to "me", not the Google name.
+    repository.me = organiser;
+    await openPostScreen(repository, {
       uid: organiser.id,
       name: organiser.name,
       email: null,

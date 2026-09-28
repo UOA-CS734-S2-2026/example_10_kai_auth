@@ -1,4 +1,5 @@
 import type { KaiEvent, NewKaiEvent } from "./kai_event";
+import type { KaiUser } from "./kai_user";
 
 /**
  * Everything the UI is allowed to ask for. Implemented by KaiApiService against
@@ -18,4 +19,10 @@ export interface EventRepository {
    * means the server could not be reached, and that one the UI has to undo.
    */
   deleteEvent(id: string): Promise<string | null>;
+
+  /**
+   * The organiser profile of whoever is signed in, or null if they are not
+   * an organiser. The server answers this from its own data.
+   */
+  fetchMe(): Promise<KaiUser | null>;
 }

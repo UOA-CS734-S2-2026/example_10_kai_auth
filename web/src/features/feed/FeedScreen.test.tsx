@@ -33,11 +33,12 @@ describe("FeedScreen", () => {
     expect(await screen.findByText("All gone")).toBeInTheDocument();
   });
 
-  it("shows a skeleton while the request is still in flight", () => {
+  it("shows a skeleton while the request is still in flight", async () => {
     const repository = new FakeEventRepository();
     repository.neverAnswers = true;
     renderApp(repository);
-    expect(screen.getByRole("status")).toBeInTheDocument();
+    // The feed appears once the server has confirmed an organiser.
+    expect(await screen.findByRole("status")).toBeInTheDocument();
     expect(screen.queryByText("Free samosas")).not.toBeInTheDocument();
   });
 

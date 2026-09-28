@@ -38,7 +38,9 @@ export type KaiEvent = EventRecord & { isActive: boolean };
 export type KaiStore = {
   events(activeOnly?: boolean): Promise<KaiEvent[]>;
   event(id: string): Promise<KaiEvent | undefined>;
-  user(id: string): Promise<User | undefined>;
+  // The organiser profile for a Firebase uid, or undefined if that account is
+  // not an organiser.
+  organiser(uid: string): Promise<User | undefined>;
   eatPortion(id: string): Promise<KaiEvent | undefined>;
   postEvent(event: NewEvent): Promise<KaiEvent>;
   // Resolves to the id that went, or undefined if there was nothing there.
@@ -76,7 +78,10 @@ export const DECAY_INTERVAL_MS = 15000;
 
 // Events record who posted them. A feed card that wants to say "Free samosas,
 // posted by Priya from Engineering" needs two resources.
-export const USERS: User[] = [
+// The seed organisers own the six seed events. Their ids are not real Firebase
+// uids, so nobody can sign in as them. Real organisers are documents in the
+// organisers collection, keyed by Firebase uid.
+export const SEED_ORGANISERS: User[] = [
   { id: 'u1', name: 'Priya', dept: 'Engineering' },
   { id: 'u2', name: 'Tama', dept: 'Computer Science' },
   { id: 'u3', name: 'Mei', dept: 'Science' },

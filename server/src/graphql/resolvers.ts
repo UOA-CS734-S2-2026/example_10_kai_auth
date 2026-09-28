@@ -5,7 +5,7 @@
 
 import { announce } from '../notify';
 import { store } from '../store';
-import { requireSignedIn, type Context } from '../auth';
+import { requireOrganiser, type Context } from '../auth';
 import type { KaiEvent, NewEvent, User } from '../data';
 
 // What the client may send: everything except who it is.
@@ -15,6 +15,7 @@ type Resolvers = {
   Query: {
     events: (parent: unknown, args: { activeOnly?: boolean }) => Promise<KaiEvent[]>;
     event: (parent: unknown, args: { id: string }) => Promise<KaiEvent | undefined>;
+    me: (parent: unknown, args: unknown, context: Context) => Promise<User | undefined>;
   };
   Event: {
     postedBy: (event: KaiEvent) => Promise<User | undefined>;
@@ -34,6 +35,9 @@ export const resolvers: Resolvers = {
   Query: {
     events: (_, { activeOnly }) => store.events(activeOnly),
     event: (_, { id }) => store.event(id),
+    // No throwing here: "you are not an organiser" is an answer, not an error.
+    me: async (_, __, context) =>
+      context.caller ? store.organiser(context.caller.uid) : undefined,
   },
 
   // A resolver on Event itself, not on Query. Ask for postedBy and this runs,
@@ -41,7 +45,7 @@ export const resolvers: Resolvers = {
   // N+1 problem did not vanish, it moved to the server, where at real scale a
   // pattern called a dataloader batches the lookups away.
   Event: {
-    postedBy: (event) => store.user(event.postedById),
+    postedBy: (event) => store.organiser(event.postedById),
   },
 
   Mutation: {
@@ -53,15 +57,15 @@ export const resolvers: Resolvers = {
     // announce() is written to make sure a failure cannot take the post down
     // with it.
     postEvent: async (_, args, context) => {
-      const caller = requireSignedIn(context);
-      console.log(`post: requested by ${caller.email ?? caller.uid} (verified token)`);
+      const { caller, organiser } = await requireOrganiser(context);
+      console.log(`post: requested by ${organiser.name} <${caller.email ?? caller.uid}> (verified organiser)`);
       const event = await store.postEvent({ ...args, postedById: caller.uid });
       await announce(event.name, event.location, event.portionsLeft);
       return event;
     },
 
-    deleteEvent: (_, { id }, context) => {
-      requireSignedIn(context);
+    deleteEvent: async (_, { id }, context) => {
+      await requireOrganiser(context);
       return store.deleteEvent(id);
     },
   },

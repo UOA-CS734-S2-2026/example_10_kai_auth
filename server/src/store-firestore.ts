@@ -12,7 +12,7 @@
 import {
   DECAY_INTERVAL_MS,
   INITIAL_EVENTS,
-  USERS,
+  SEED_ORGANISERS,
   slugify,
   toDocument,
   type KaiEvent,
@@ -23,7 +23,9 @@ import {
 import { db } from './firebase';
 
 const events = db.collection('events');
-const users = db.collection('users');
+// A document here, keyed by Firebase uid, is what makes that account an
+// organiser. No document, no permission.
+const organisers = db.collection('organisers');
 
 // A collection has no natural order, so ask for one every time. Without this
 // Firestore hands documents back sorted by document id, and the feed silently
@@ -101,9 +103,13 @@ export const store: KaiStore = {
     return doc.exists ? toKaiEvent(doc.data()!) : undefined;
   },
 
-  async user(id: string): Promise<User | undefined> {
-    const doc = await users.doc(id).get();
-    return doc.exists ? (doc.data() as User) : undefined;
+  // Read on every write request rather than cached at startup, so a change in
+  // the console applies to the very next request.
+  async organiser(uid: string): Promise<User | undefined> {
+    const doc = await organisers.doc(uid).get();
+    if (!doc.exists) return undefined;
+    const data = doc.data()!;
+    return { id: doc.id, name: data.name, dept: data.dept };
   },
 
   // Someone just took one. Read, subtract, write.
@@ -181,11 +187,18 @@ export const store: KaiStore = {
     INITIAL_EVENTS.forEach((event, index) => {
       batch.set(events.doc(event.id), toDocument(event, index));
     });
-    for (const user of USERS) {
-      batch.set(users.doc(user.id), user);
+    // Organisers go back to the four seeds. Anyone added in the console since
+    // is removed.
+    const seededOrganisers = new Set(SEED_ORGANISERS.map((o) => o.id));
+    const existingOrganisers = await organisers.get();
+    for (const doc of existingOrganisers.docs) {
+      if (!seededOrganisers.has(doc.id)) batch.delete(doc.ref);
+    }
+    for (const user of SEED_ORGANISERS) {
+      batch.set(organisers.doc(user.id), user);
     }
     await batch.commit();
-    console.log('reset: back to the initial six events');
+    console.log('reset: back to the initial six events and the four seed organisers');
     return INITIAL_EVENTS.map((event) => toKaiEvent(toDocument(event, 0)));
   },
 

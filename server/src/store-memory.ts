@@ -8,7 +8,7 @@ import {
   buildEvents,
   slugify,
   toEvent,
-  USERS,
+  SEED_ORGANISERS,
   type EventRecord,
   type KaiEvent,
   type KaiStore,
@@ -50,8 +50,8 @@ export const store: KaiStore = {
     return event && toEvent(event);
   },
 
-  async user(id: string): Promise<User | undefined> {
-    return USERS.find((u) => u.id === id);
+  async organiser(uid: string): Promise<User | undefined> {
+    return SEED_ORGANISERS.find((u) => u.id === uid);
   },
 
   // Someone just took one.

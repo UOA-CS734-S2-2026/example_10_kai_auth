@@ -38,6 +38,10 @@ export const typeDefs = `#graphql
   type Query {
     events(activeOnly: Boolean = false): [Event!]!
     event(id: ID!): Event
+
+    # The organiser profile of whoever is calling. Null when signed out, and
+    # null when signed in but not an organiser.
+    me: User
   }
 
   # Mutation is the other front door, for operations that change something.

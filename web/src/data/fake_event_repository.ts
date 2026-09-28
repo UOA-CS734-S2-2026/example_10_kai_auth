@@ -1,5 +1,6 @@
 import type { EventRepository } from "./event_repository";
 import type { KaiEvent, NewKaiEvent } from "./kai_event";
+import { ORGANISERS, type KaiUser } from "./kai_user";
 
 /** A trimmed copy of the server's seed data. */
 export const sampleEvents: KaiEvent[] = [
@@ -18,6 +19,8 @@ export class FakeEventRepository implements EventRepository {
   shouldThrow = false;
   neverAnswers = false;
   readonly postedEvents: NewKaiEvent[] = [];
+  /** Who the fake server says you are. Priya, unless a test says otherwise. */
+  me: KaiUser | null = ORGANISERS[0];
 
   constructor(events: KaiEvent[] = sampleEvents) {
     this.events = [...events];
@@ -67,6 +70,14 @@ export class FakeEventRepository implements EventRepository {
     const existed = this.events.some((e) => e.id === id);
     this.events = this.events.filter((e) => e.id !== id);
     return this.guard(existed ? id : null);
+  }
+
+  /** Its own knob: the feed's failure states should not also lock the gate. */
+  meFails = false;
+
+  fetchMe(): Promise<KaiUser | null> {
+    if (this.meFails) return Promise.reject(new Error("Could not reach the Kai server"));
+    return Promise.resolve(this.me);
   }
 
   postEvent(input: NewKaiEvent): Promise<KaiEvent> {

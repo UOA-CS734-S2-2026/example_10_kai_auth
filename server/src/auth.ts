@@ -11,7 +11,9 @@
 
 import { GraphQLError } from 'graphql';
 
+import type { User } from './data';
 import { auth } from './firebase';
+import { store } from './store';
 
 export type Caller = {
   uid: string;
@@ -68,4 +70,20 @@ export async function callerFrom(header: string | undefined): Promise<Caller | n
 export function requireSignedIn(context: Context): Caller {
   if (!context.caller) throw unauthenticated('Sign in first.');
   return context.caller;
+}
+
+/**
+ * Signed in is not the same as allowed. Any Google account can get a valid
+ * token; whether it belongs to an organiser is our data, not Google's.
+ */
+export async function requireOrganiser(
+  context: Context,
+): Promise<{ caller: Caller; organiser: User }> {
+  const caller = requireSignedIn(context);
+  const organiser = await store.organiser(caller.uid);
+  if (!organiser) {
+    console.log(`auth: ${caller.email ?? caller.uid} is signed in but not an organiser`);
+    throw forbidden(`You are signed in as ${caller.email ?? caller.uid}, but you are not an organiser.`);
+  }
+  return { caller, organiser };
 }

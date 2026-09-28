@@ -5,6 +5,7 @@ import {
   kaiEventFromJson,
   kaiEventsFromJson,
 } from "./kai_event";
+import type { KaiUser } from "./kai_user";
 
 const DEFAULT_BASE_URL = "http://localhost:3734";
 
@@ -16,6 +17,16 @@ const DEFAULT_BASE_URL = "http://localhost:3734";
 export const DELETE_EVENT_MUTATION = `
   mutation DeleteEvent($id: ID!) {
     deleteEvent(id: $id)
+  }
+`;
+
+const ME_QUERY = `
+  query Me {
+    me {
+      id
+      name
+      dept
+    }
   }
 `;
 
@@ -137,6 +148,11 @@ export class KaiApiService implements EventRepository {
       { id },
     );
     return data.deleteEvent;
+  }
+
+  async fetchMe(): Promise<KaiUser | null> {
+    const data = await this.graphql<{ me: KaiUser | null }>(ME_QUERY, {});
+    return data.me;
   }
 
   async postEvent(input: NewKaiEvent): Promise<KaiEvent> {

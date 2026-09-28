@@ -6,7 +6,7 @@
 // event and user ids as the DOCUMENT ids and writes with set(), so running it
 // twice overwrites rather than duplicating.
 
-import { INITIAL_EVENTS, USERS, toDocument } from './data';
+import { INITIAL_EVENTS, SEED_ORGANISERS, toDocument } from './data';
 import { db, projectId } from './firebase';
 
 async function seed(): Promise<void> {
@@ -15,8 +15,8 @@ async function seed(): Promise<void> {
   // up half seeded.
   const batch = db.batch();
 
-  for (const user of USERS) {
-    batch.set(db.collection('users').doc(user.id), user);
+  for (const user of SEED_ORGANISERS) {
+    batch.set(db.collection('organisers').doc(user.id), user);
   }
 
   INITIAL_EVENTS.forEach((event, index) => {
@@ -27,7 +27,7 @@ async function seed(): Promise<void> {
   });
 
   await batch.commit();
-  console.log(`seeded ${USERS.length} users, ${INITIAL_EVENTS.length} events into ${projectId}`);
+  console.log(`seeded ${SEED_ORGANISERS.length} organisers, ${INITIAL_EVENTS.length} events into ${projectId}`);
 }
 
 seed().catch((error) => {

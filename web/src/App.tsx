@@ -4,6 +4,8 @@ import { PostEventScreen } from "./features/post/PostEventScreen";
 import { AccountBar } from "./features/auth/AccountBar";
 import { SignInScreen } from "./features/auth/SignInScreen";
 import { TokenPeek } from "./features/auth/TokenPeek";
+import { NotOrganiserScreen } from "./features/auth/NotOrganiserScreen";
+import { OrganiserProvider, useOrganiserState } from "./state/OrganiserContext";
 import { SelectionProvider } from "./state/SelectionContext";
 import { AuthProvider, useAuth } from "./state/AuthContext";
 import { RepositoryProvider } from "./state/RepositoryContext";
@@ -52,6 +54,36 @@ function Gate() {
   }
   if (user === null) {
     return <main className="app__main"><SignInScreen /></main>;
+  }
+  // Keyed by uid, so signing in as someone else asks the server afresh.
+  return (
+    <OrganiserProvider key={user.uid}>
+      <OrganiserGate />
+    </OrganiserProvider>
+  );
+}
+
+/**
+ * Signed in is not the same as allowed. The server's `me` query decides which
+ * screen you see; the server still refuses the write whatever this shows.
+ */
+function OrganiserGate() {
+  const { state, recheck } = useOrganiserState();
+  if (state.status === "loading") {
+    return <main className="app__main"><p className="state">Checking you are an organiser{"\u2026"}</p></main>;
+  }
+  if (state.status === "error") {
+    return (
+      <main className="app__main">
+        <div className="state state--error" role="alert">
+          <p>{state.message}</p>
+          <button type="button" onClick={recheck}>Try again</button>
+        </div>
+      </main>
+    );
+  }
+  if (state.status === "not-organiser") {
+    return <main className="app__main"><NotOrganiserScreen /></main>;
   }
   return <Dashboard />;
 }

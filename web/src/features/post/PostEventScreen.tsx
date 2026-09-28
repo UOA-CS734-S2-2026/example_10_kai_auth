@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRepository } from "../../state/RepositoryContext";
-import { useSignedInUser } from "../../state/AuthContext";
+import { useOrganiser } from "../../state/OrganiserContext";
 import type { NewKaiEvent } from "../../data/kai_event";
 
 /** Defaults roughly to the middle of the City Campus. */
@@ -20,7 +20,7 @@ const EMPTY: NewKaiEvent = {
  */
 export function PostEventScreen() {
   const repository = useRepository();
-  const user = useSignedInUser();
+  const organiser = useOrganiser();
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +66,8 @@ export function PostEventScreen() {
       </header>
 
       <p className="posting-as">
-        Posting as <strong>{user.name}</strong>.
+        Posting as <strong>{organiser.name}</strong>, {organiser.dept}. The
+        server works that out from your token; this line just repeats it.
       </p>
 
       <div className="field">
@@ -125,7 +126,7 @@ export function PostEventScreen() {
       )}
       {posted && (
         <p className="state state--success" role="status">
-          Posted {posted} as {user.name}. Every phone subscribed to the
+          Posted {posted} as {organiser.name}. Every phone subscribed to the
           kai-events topic just got a notification.
         </p>
       )}
