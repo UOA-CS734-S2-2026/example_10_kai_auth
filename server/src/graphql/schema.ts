@@ -21,7 +21,9 @@ export const typeDefs = `#graphql
     isActive: Boolean!
     lat: Float!
     lng: Float!
-    postedBy: User!
+    # Nullable: a missing organiser profile should blank one field, not fail
+    # the whole feed.
+    postedBy: User
   }
 
   type User {
@@ -45,6 +47,9 @@ export const typeDefs = `#graphql
   # postEvent returns Event! rather than Event: a post either happens or it
   # errors, so there is no such thing as a successful post with nothing to
   # show for it.
+  #
+  # There is no postedById argument: the server takes the poster from the
+  # verified token.
   type Mutation {
     eatPortion(id: ID!): Event
     postEvent(
@@ -54,7 +59,6 @@ export const typeDefs = `#graphql
       portions: Int!
       lat: Float!
       lng: Float!
-      postedById: ID!
     ): Event!
 
     # Takes a listing down and returns the id that went. Nullable on purpose:

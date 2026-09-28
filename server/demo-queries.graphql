@@ -42,6 +42,11 @@ mutation Eat($id: ID!) {
   }
 }
 
+# postEvent needs a token. In Apollo
+# Sandbox, open the Headers tab and add
+#   Authorization: Bearer <paste a token from the dashboard's token panel>
+# Without it you get 401 "Sign in first."
+#
 # Post a new event. The write lands in Firestore, so
 # every phone watching the map sees the pin appear; then the server sends one
 # notification to the kai-events topic, so every phone that is NOT watching
@@ -56,7 +61,6 @@ mutation PostEvent {
     portions: 20
     lat: -36.8525
     lng: 174.7687
-    postedById: "u2"
   ) {
     id
     name

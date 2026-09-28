@@ -12,6 +12,7 @@ import 'dotenv/config';
 import { readFileSync } from 'node:fs';
 
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 
@@ -32,6 +33,10 @@ const app = initializeApp({ credential: applicationDefault() });
 
 export const db = getFirestore(app);
 export const messaging = getMessaging(app);
+
+// Firebase Authentication, for verifyIdToken. It checks a token's signature
+// against Google's public keys: this server can check tokens, not make them.
+export const auth = getAuth(app);
 
 // Which project are we actually pointed at? The key file says so, and asking
 // it is the first thing to do when the data is not where you expected it.

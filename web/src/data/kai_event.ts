@@ -14,7 +14,10 @@ export type KaiEvent = {
   postedById: string | null;
 };
 
-/** What the organiser form collects. The server assigns `id` and `isActive`. */
+/**
+ * What the organiser form collects. The server assigns `id` and `isActive`,
+ * and it also decides who posted it, from the token.
+ */
 export type NewKaiEvent = {
   name: string;
   location: string;
@@ -22,7 +25,6 @@ export type NewKaiEvent = {
   portionsLeft: number;
   lat: number;
   lng: number;
-  postedById: string;
 };
 
 /** Parses one event, so nothing past this module has to deal with `unknown`. */

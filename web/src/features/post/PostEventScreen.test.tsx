@@ -65,7 +65,7 @@ describe("PostEventScreen", () => {
 });
 
 describe("who posted it", () => {
-  it("attributes the event to whoever is signed in", async () => {
+  it("does not tell the server who posted it: the token does that", async () => {
     const repository = new FakeEventRepository();
     const user = await openPostScreen(repository, { uid: "u3", name: "Mei", email: null });
 
@@ -73,7 +73,7 @@ describe("who posted it", () => {
     await user.click(screen.getByRole("button", { name: /post event/i }));
 
     await screen.findByRole("status");
-    expect(repository.postedEvents[0].postedById).toBe("u3");
+    expect(repository.postedEvents[0]).not.toHaveProperty("postedById");
   });
 
   it("says out loud who it is about to post as", async () => {

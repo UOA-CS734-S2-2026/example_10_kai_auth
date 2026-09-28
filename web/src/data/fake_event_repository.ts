@@ -75,6 +75,8 @@ export class FakeEventRepository implements EventRepository {
       ...input,
       id: `posted-${this.postedEvents.length}`,
       isActive: input.portionsLeft > 0,
+      // The real server fills this in from the token.
+      postedById: null,
     };
     this.events = [...this.events, created];
     return this.guard(created);

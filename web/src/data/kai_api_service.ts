@@ -27,7 +27,6 @@ const POST_EVENT_MUTATION = `
     $portions: Int!
     $lat: Float!
     $lng: Float!
-    $postedById: ID!
   ) {
     postEvent(
       name: $name
@@ -36,7 +35,6 @@ const POST_EVENT_MUTATION = `
       portions: $portions
       lat: $lat
       lng: $lng
-      postedById: $postedById
     ) {
       id
       name
@@ -50,24 +48,36 @@ const POST_EVENT_MUTATION = `
   }
 `;
 
+/** Returns the current ID token, or null when nobody is signed in. */
+export type TokenSource = () => Promise<string | null>;
+
 /**
- * Talks to the Kai Events server. Reads use the REST routes; the single write
- * uses the GraphQL mutation, which is where `postEvent` lives.
+ * Talks to the Kai Events server. Reads use the REST routes; writes use the
+ * GraphQL mutations.
  *
- * Base URL and fetch implementation are injectable so tests can supply their
- * own without a mocking library.
+ * GraphQL requests carry "Authorization: Bearer <ID token>" when someone is
+ * signed in. REST reads do not need it; the feed is public.
+ *
+ * Base URL, fetch and the token source are injectable so tests can supply
+ * their own without a mocking library.
  */
 export class KaiApiService implements EventRepository {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
+  private readonly getToken: TokenSource;
 
-  constructor(baseUrl?: string, fetchImpl: typeof fetch = globalThis.fetch) {
+  constructor(
+    baseUrl?: string,
+    fetchImpl: typeof fetch = globalThis.fetch,
+    getToken: TokenSource = async () => null,
+  ) {
     const fromEnv =
       typeof import.meta !== "undefined"
         ? (import.meta.env?.VITE_KAI_SERVER as string | undefined)
         : undefined;
     this.baseUrl = (baseUrl ?? fromEnv ?? DEFAULT_BASE_URL).replace(/\/$/, "");
     this.fetchImpl = fetchImpl.bind(globalThis);
+    this.getToken = getToken;
   }
 
   private async rest(path: string, init?: RequestInit): Promise<unknown> {
@@ -79,15 +89,27 @@ export class KaiApiService implements EventRepository {
   }
 
   private async graphql<T>(query: string, variables: unknown): Promise<T> {
+    // Asked for fresh on every request: the SDK refreshes the token when it
+    // is near expiry, so a copy we kept ourselves would eventually go stale.
+    const token = await this.getToken();
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
     const res = await this.fetchImpl(`${this.baseUrl}/graphql`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ query, variables }),
     });
+    // A 401 or 403 still has a useful GraphQL body ("Sign in first."), so
+    // read it before deciding the server was unreachable.
+    const body = (await res.json().catch(() => ({}))) as {
+      data?: T;
+      errors?: { message: string }[];
+    };
+    if (body.errors?.length) throw new Error(body.errors[0].message);
     if (!res.ok) {
       throw new Error(`Could not reach the Kai server (HTTP ${res.status})`);
     }
-    const body = (await res.json()) as { data?: T; errors?: { message: string }[] };
     // GraphQL answers 200 even when the operation fails, so the errors array
     // has to be checked explicitly.
     if (body.errors?.length) throw new Error(body.errors[0].message);
@@ -127,10 +149,10 @@ export class KaiApiService implements EventRepository {
         portions: input.portionsLeft,
         lat: input.lat,
         lng: input.lng,
-        postedById: input.postedById,
       },
     );
-    // The mutation response omits postedById, so carry across what was sent.
-    return kaiEventFromJson({ ...data.postEvent, postedById: input.postedById });
+    // Who posted it is the server's call now, so the response is the truth
+    // and there is nothing to carry across.
+    return kaiEventFromJson(data.postEvent);
   }
 }

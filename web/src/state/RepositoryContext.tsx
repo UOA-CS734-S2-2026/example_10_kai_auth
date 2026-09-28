@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { EventRepository } from "../data/event_repository";
 import { KaiApiService } from "../data/kai_api_service";
+import { useAuth } from "./AuthContext";
 
 const RepositoryContext = createContext<EventRepository | null>(null);
 
@@ -17,7 +18,12 @@ export function RepositoryProvider({
 }) {
   // Memoised so the default service keeps a stable identity across renders;
   // otherwise every effect depending on it would re-run each time.
-  const value = useMemo(() => repository ?? new KaiApiService(), [repository]);
+  const { service: auth } = useAuth();
+  // The real service gets a way to fetch the current ID token.
+  const value = useMemo(
+    () => repository ?? new KaiApiService(undefined, undefined, () => auth.getIdToken()),
+    [repository, auth],
+  );
   return <RepositoryContext.Provider value={value}>{children}</RepositoryContext.Provider>;
 }
 

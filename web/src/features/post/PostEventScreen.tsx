@@ -4,7 +4,7 @@ import { useSignedInUser } from "../../state/AuthContext";
 import type { NewKaiEvent } from "../../data/kai_event";
 
 /** Defaults roughly to the middle of the City Campus. */
-const EMPTY: Omit<NewKaiEvent, "postedById"> = {
+const EMPTY: NewKaiEvent = {
   name: "",
   location: "",
   emoji: "\u{1F35B}",
@@ -44,8 +44,7 @@ export function PostEventScreen() {
         ...form,
         name: form.name.trim(),
         location: form.location.trim(),
-        // Sent as an argument; the server does not check it.
-        postedById: user.uid,
+        // No postedById: the server takes the poster from the token.
       });
       setPosted(created.name);
       setForm(EMPTY);
